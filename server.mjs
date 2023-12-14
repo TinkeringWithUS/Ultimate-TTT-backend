@@ -10,9 +10,9 @@ import { EventEmitter } from "node:events";
 const app = express();
 const server = createServer(app);
 const io = new Server(server, {
-    cors: {
-        origin: "http://localhost:8080"
-    }
+  cors: {
+    origin: "http://localhost:8080"
+  }
 });
 
 // some thoughts, we should store our own model of the current game board
@@ -44,86 +44,86 @@ const PLAYER_TWO_SYMBOL = "O";
 let socketCount = 0;
 
 const socketEventMappedHandler = {
-    [PLAYER_ONE_STORAGE_KEY]: function (tileId) {
-        console.log("recieved player one storage key, with tileId: " + tileId);
-    },
-    [PLAYER_TWO_STORAGE_KEY]: function (tileId) {
-        console.log("recieved player two storage key, with tileId: " + tileId);
-    },
-    ["disconnect"]: function () {
-        console.log("user disconnected");
-    },
+  [PLAYER_ONE_STORAGE_KEY]: function (tileId) {
+    console.log("recieved player one storage key, with tileId: " + tileId);
+  },
+  [PLAYER_TWO_STORAGE_KEY]: function (tileId) {
+    console.log("recieved player two storage key, with tileId: " + tileId);
+  },
+  ["disconnect"]: function () {
+    console.log("user disconnected");
+  },
 }
 
 const gameOverEmitter = new EventEmitter();
 
 io.on('connection', (socket) => {
-    console.log('user connected. socket id: ' + socket.id);
-    socketCount++;
-    console.log("Socket count: " + socketCount);
+  console.log('user connected. socket id: ' + socket.id);
+  socketCount++;
+  console.log("Socket count: " + socketCount);
 
-    registerSocketListeners(socket);
+  registerSocketListeners(socket);
 
-    needGameQueue.push(socket);
-    
-    if (needGameQueue.length >= 2) {
-        const playerOneSocket = needGameQueue.shift();
-        const playerTwoSocket = needGameQueue.shift();
+  needGameQueue.push(socket);
 
-        const roomIdLength = 10;
-        const randomRoomName = "room id: " + randomId(roomIdLength);
+  if (needGameQueue.length >= 2) {
+    const playerOneSocket = needGameQueue.shift();
+    const playerTwoSocket = needGameQueue.shift();
 
-        const activeGame = new GameModel(PLAYER_ONE_SYMBOL, PLAYER_TWO_SYMBOL,
-            playerOneSocket, playerTwoSocket, randomRoomName, gameOverEmitter);
+    const roomIdLength = 10;
+    const randomRoomName = "room id: " + randomId(roomIdLength);
 
-        activeGameRooms.add(activeGame);
+    const activeGame = new GameModel(PLAYER_ONE_SYMBOL, PLAYER_TWO_SYMBOL,
+      playerOneSocket, playerTwoSocket, randomRoomName, gameOverEmitter);
 
-        playerOneSocket.join(randomRoomName);
-        playerTwoSocket.join(randomRoomName);
+    activeGameRooms.add(activeGame);
 
-        initializePlayerSockets(playerOneSocket, playerTwoSocket);
+    playerOneSocket.join(randomRoomName);
+    playerTwoSocket.join(randomRoomName);
 
-        gameOverEmitter.on(GAME_OVER, activeGame => {
-            activeGameRooms.delete(activeGame);
-        });
+    initializePlayerSockets(playerOneSocket, playerTwoSocket);
 
-        // received p1 move 
-        playerOneSocket.on(PLAYER_ONE_STORAGE_KEY, (moveInfo) => {
-            const { tileId, boardId } = moveInfo;
-            activeGame.sendMove(tileId, boardId);
-            console.log("Received move. tileid: " + tileId + " player two");
-        });
-        // received p2 move
-        playerTwoSocket.on(PLAYER_TWO_STORAGE_KEY, (moveInfo) => {
-            const { tileId, boardId } = moveInfo;
-            activeGame.sendMove(tileId, boardId);
-            console.log("Received move. tileid: " + tileId + " player one");
-        });
+    gameOverEmitter.on(GAME_OVER, activeGame => {
+      activeGameRooms.delete(activeGame);
+    });
 
-        console.log("num active game rooms: " + activeGameRooms.size);
-    }
+    // received p1 move 
+    playerOneSocket.on(PLAYER_ONE_STORAGE_KEY, (moveInfo) => {
+      const { tileId, boardId } = moveInfo;
+      activeGame.sendMove(tileId, boardId);
+      console.log("Received move. tileid: " + tileId + " player two");
+    });
+    // received p2 move
+    playerTwoSocket.on(PLAYER_TWO_STORAGE_KEY, (moveInfo) => {
+      const { tileId, boardId } = moveInfo;
+      activeGame.sendMove(tileId, boardId);
+      console.log("Received move. tileid: " + tileId + " player one");
+    });
+
+    console.log("num active game rooms: " + activeGameRooms.size);
+  }
 });
 
 function initializePlayerSockets(playerOneSocket, playerTwoSocket) {
-    const playerOneInitializeData = {
-        playerKey: PLAYER_ONE_STORAGE_KEY, playerSymbol: PLAYER_ONE_SYMBOL,
-        opponentSymbol: PLAYER_TWO_SYMBOL
-    };
+  const playerOneInitializeData = {
+    playerKey: PLAYER_ONE_STORAGE_KEY, playerSymbol: PLAYER_ONE_SYMBOL,
+    opponentSymbol: PLAYER_TWO_SYMBOL
+  };
 
-    const playerTwoInitializeData = {
-        playerKey: PLAYER_TWO_STORAGE_KEY, playerSymbol: PLAYER_TWO_SYMBOL,
-        opponentSymbol: PLAYER_ONE_SYMBOL
-    }
+  const playerTwoInitializeData = {
+    playerKey: PLAYER_TWO_STORAGE_KEY, playerSymbol: PLAYER_TWO_SYMBOL,
+    opponentSymbol: PLAYER_ONE_SYMBOL
+  }
 
-    console.log("p1 intial data: " + JSON.stringify(playerOneInitializeData));
-    console.log("p2 initial data: " + JSON.stringify(playerTwoInitializeData));
+  console.log("p1 intial data: " + JSON.stringify(playerOneInitializeData));
+  console.log("p2 initial data: " + JSON.stringify(playerTwoInitializeData));
 
-    playerOneSocket.emit(INITIALIZE, playerOneInitializeData);
-    playerTwoSocket.emit(INITIALIZE, playerTwoInitializeData);
+  playerOneSocket.emit(INITIALIZE, playerOneInitializeData);
+  playerTwoSocket.emit(INITIALIZE, playerTwoInitializeData);
 }
 
 server.listen(port, function () {
-    console.log(`Listening on port ${port}`);
+  console.log(`Listening on port ${port}`);
 });
 
 // app.get("/", function (req, res) {
@@ -131,39 +131,39 @@ server.listen(port, function () {
 // });
 
 app.get("/rooms", function (req, res) {
-    printClientInRooms().then(clientInRooms => {
-        if (clientInRooms === "") {
-            console.log("/rooms, no rooms ");
-            clientInRooms = "/rooms no rooms. Room queues: " + activeGameRooms.length;
-        } else {
-            console.log("/rooms: " + clientInRooms);
-        }
-        res.send(clientInRooms);
-    });
+  printClientInRooms().then(clientInRooms => {
+    if (clientInRooms === "") {
+      console.log("/rooms, no rooms ");
+      clientInRooms = "/rooms no rooms. Room queues: " + activeGameRooms.length;
+    } else {
+      console.log("/rooms: " + clientInRooms);
+    }
+    res.send(clientInRooms);
+  });
 })
 
 async function printClientInRooms() {
-    let clientInRoomsStr = "";
-    for (const roomName of activeGameRooms) {
-        const sockets = await io.in(roomName).fetchSockets();
-        for (const socket of sockets) {
-            clientInRoomsStr += "\n Socket in room: " + roomName + ". socket id: " + socket.id;
-            console.log("Socket in room: " + roomName + ". socket id: " + socket.id);
-        }
+  let clientInRoomsStr = "";
+  for (const roomName of activeGameRooms) {
+    const sockets = await io.in(roomName).fetchSockets();
+    for (const socket of sockets) {
+      clientInRoomsStr += "\n Socket in room: " + roomName + ". socket id: " + socket.id;
+      console.log("Socket in room: " + roomName + ". socket id: " + socket.id);
     }
-    return clientInRoomsStr;
+  }
+  return clientInRoomsStr;
 }
 
 function registerSocketListeners(socket) {
-    for (const event in socketEventMappedHandler) {
-        socket.on(event, socketEventMappedHandler[event]);
-    }
+  for (const event in socketEventMappedHandler) {
+    socket.on(event, socketEventMappedHandler[event]);
+  }
 }
 
 function randomId(length) {
-    let randomId = "";
-    for (let i = 0; i < length; i++) {
-        randomId += "" + Math.round(Math.random() * 10);
-    }
-    return randomId;
+  let randomId = "";
+  for (let i = 0; i < length; i++) {
+    randomId += "" + Math.round(Math.random() * 10);
+  }
+  return randomId;
 }
