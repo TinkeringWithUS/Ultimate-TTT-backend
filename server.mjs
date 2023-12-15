@@ -56,10 +56,14 @@ const socketEventMappedHandler = {
 
 const gameOverEmitter = new EventEmitter();
 
-io.on('connection', (socket) => {
+io.on('connection', socket => {
   console.log('user connected. socket id: ' + socket.id);
   socketCount++;
   console.log("Socket count: " + socketCount);
+
+  // socket.on("rejoin", gameId => {
+
+  // });
 
   registerSocketListeners(socket);
 

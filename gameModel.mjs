@@ -25,6 +25,9 @@ export class GameModel {
     this.metaBoard = new MetaBoard(this.playerOne, this.playerTwo);
     this.endStatus = null;
 
+    this.playerOneSocket.join(this.gameId);
+    this.playerTwoSocket.join(this.gameId);
+
     // received p1 move 
     this.playerOneSocket.on(PLAYER_ONE_STORAGE_KEY, (moveInfo) => {
       const { tileId, boardId } = moveInfo;
@@ -57,6 +60,8 @@ export class GameModel {
   sendMove(tileId, boardId) {
     const hasPlaced = this.placeTile(tileId, boardId);
 
+    console.log("sendMove in game model");
+
     if (hasPlaced) {
       const moveSenderPlayerSocket = this.playerOneTurn ? this.playerOneSocket : this.playerTwoSocket;
       const receivingPlayerKey = this.playerOneTurn ? PLAYER_TWO_STORAGE_KEY : PLAYER_ONE_STORAGE_KEY;
@@ -66,6 +71,7 @@ export class GameModel {
 
       moveSenderPlayerSocket.to(this.gameId).emit(NEW_MOVE, newMoveInfo);
 
+      console.log("game Id " + this.gameId);
       console.log("server sending move. receiving player: " + receivingPlayerKey + ". tileid: " + tileId);
 
       this.playerOneTurn = !this.playerOneTurn;
