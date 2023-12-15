@@ -7,15 +7,15 @@ import { MetaBoard } from "./metaBoard.mjs";
 
 export class GameModel {
 
-  constructor(playerOne, playerTwo, playerOneSocket, playerTwoSocket, gameRoom, gameOverEmitter) {
+  constructor(playerOne, playerTwo, playerOneSocket, playerTwoSocket, 
+              gameId, gameOverEmitter) {
     this.playerOne = playerOne;
     this.playerTwo = playerTwo;
 
     this.playerOneSocket = playerOneSocket;
     this.playerTwoSocket = playerTwoSocket;
 
-    // this.gameId = gameId;
-    this.gameRoom = gameRoom;
+    this.gameId = gameId;
     this.gameOverEmitter = gameOverEmitter;
 
     this.playerOnePlayAgain = false;
@@ -24,6 +24,20 @@ export class GameModel {
     this.playerOneTurn = true;
     this.metaBoard = new MetaBoard(this.playerOne, this.playerTwo);
     this.endStatus = null;
+
+    // received p1 move 
+    this.playerOneSocket.on(PLAYER_ONE_STORAGE_KEY, (moveInfo) => {
+      const { tileId, boardId } = moveInfo;
+      this.sendMove(tileId, boardId);
+      console.log("Received move. tileid: " + tileId + " player two");
+    });
+
+    // received p2 move
+    this.playerTwoSocket.on(PLAYER_TWO_STORAGE_KEY, (moveInfo) => {
+      const { tileId, boardId } = moveInfo;
+      this.sendMove(tileId, boardId);
+      console.log("Received move. tileid: " + tileId + " player one");
+    });
   }
 
   placeTile(tileId, boardId) {
@@ -50,7 +64,7 @@ export class GameModel {
         moveId: tileId, boardId: boardId, gameStatus: this.endStatus, player: receivingPlayerKey
       };
 
-      moveSenderPlayerSocket.to(this.gameRoom).emit(NEW_MOVE, newMoveInfo);
+      moveSenderPlayerSocket.to(this.gameId).emit(NEW_MOVE, newMoveInfo);
 
       console.log("server sending move. receiving player: " + receivingPlayerKey + ". tileid: " + tileId);
 
@@ -76,7 +90,7 @@ export class GameModel {
       this.playerTwoSocket.emit(DRAW);
       console.log("draw");
     }
-    this.gameOverEmitter.emit(GAME_OVER, this);
+    this.gameOverEmitter.emit(GAME_OVER, this.gameId);
   }
 
   // registerPlayAgainListeners() {

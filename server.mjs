@@ -4,7 +4,6 @@ import { Server } from "socket.io";
 
 import { GAME_OVER, INITIALIZE, PLAYER_ONE_STORAGE_KEY, PLAYER_TWO_STORAGE_KEY, RESET } from "../utils/constants.mjs";
 import { GameModel } from "../backend/gameModel.mjs";
-import { log } from "console";
 import { EventEmitter } from "node:events";
 
 const app = express();
@@ -35,7 +34,7 @@ const io = new Server(server, {
 const port = 3000;
 
 // const activeGameRooms = [];
-const activeGameRooms = new Set();
+const activeGameRooms = new Map(); 
 const needGameQueue = [];
 
 const PLAYER_ONE_SYMBOL = "X";
@@ -67,52 +66,41 @@ io.on('connection', (socket) => {
   needGameQueue.push(socket);
 
   if (needGameQueue.length >= 2) {
-    const playerOneSocket = needGameQueue.shift();
-    const playerTwoSocket = needGameQueue.shift();
-
-    const roomIdLength = 10;
-    const randomRoomName = "room id: " + randomId(roomIdLength);
-
-    const activeGame = new GameModel(PLAYER_ONE_SYMBOL, PLAYER_TWO_SYMBOL,
-      playerOneSocket, playerTwoSocket, randomRoomName, gameOverEmitter);
-
-    activeGameRooms.add(activeGame);
-
-    playerOneSocket.join(randomRoomName);
-    playerTwoSocket.join(randomRoomName);
-
-    initializePlayerSockets(playerOneSocket, playerTwoSocket);
-
-    gameOverEmitter.on(GAME_OVER, activeGame => {
-      activeGameRooms.delete(activeGame);
-    });
-
-    // received p1 move 
-    playerOneSocket.on(PLAYER_ONE_STORAGE_KEY, (moveInfo) => {
-      const { tileId, boardId } = moveInfo;
-      activeGame.sendMove(tileId, boardId);
-      console.log("Received move. tileid: " + tileId + " player two");
-    });
-    // received p2 move
-    playerTwoSocket.on(PLAYER_TWO_STORAGE_KEY, (moveInfo) => {
-      const { tileId, boardId } = moveInfo;
-      activeGame.sendMove(tileId, boardId);
-      console.log("Received move. tileid: " + tileId + " player one");
-    });
-
-    console.log("num active game rooms: " + activeGameRooms.size);
+    createGame();
   }
 });
 
-function initializePlayerSockets(playerOneSocket, playerTwoSocket) {
+// Side effect: shrinks needGameQueue by 2
+function createGame() {
+  const playerOneSocket = needGameQueue.shift();
+  const playerTwoSocket = needGameQueue.shift();
+
+  const roomIdLength = 60;
+  const randomRoomId = randomId(roomIdLength); 
+
+  const activeGame = new GameModel(PLAYER_ONE_SYMBOL, PLAYER_TWO_SYMBOL,
+    playerOneSocket, playerTwoSocket, randomRoomId, gameOverEmitter);
+
+  activeGameRooms.set(randomRoomId, activeGame); 
+
+  initializePlayerSockets(playerOneSocket, playerTwoSocket, randomRoomId);
+
+  gameOverEmitter.on(GAME_OVER, activeGameId => {
+    activeGameRooms.delete(activeGameId);
+  });
+
+  console.log("num active game rooms: " + activeGameRooms.size);
+}
+
+function initializePlayerSockets(playerOneSocket, playerTwoSocket, roomId) {
   const playerOneInitializeData = {
     playerKey: PLAYER_ONE_STORAGE_KEY, playerSymbol: PLAYER_ONE_SYMBOL,
-    opponentSymbol: PLAYER_TWO_SYMBOL
+    opponentSymbol: PLAYER_TWO_SYMBOL, roomId: roomId
   };
 
   const playerTwoInitializeData = {
     playerKey: PLAYER_TWO_STORAGE_KEY, playerSymbol: PLAYER_TWO_SYMBOL,
-    opponentSymbol: PLAYER_ONE_SYMBOL
+    opponentSymbol: PLAYER_ONE_SYMBOL, roomId: roomId
   }
 
   console.log("p1 intial data: " + JSON.stringify(playerOneInitializeData));
@@ -126,15 +114,11 @@ server.listen(port, function () {
   console.log(`Listening on port ${port}`);
 });
 
-// app.get("/", function (req, res) {
-//     res.sendFile(__dirname + "/index.html");
-// });
-
 app.get("/rooms", function (req, res) {
   printClientInRooms().then(clientInRooms => {
     if (clientInRooms === "") {
       console.log("/rooms, no rooms ");
-      clientInRooms = "/rooms no rooms. Room queues: " + activeGameRooms.length;
+      clientInRooms = "/rooms no rooms. Room queues: " + activeGameRooms.size;
     } else {
       console.log("/rooms: " + clientInRooms);
     }
@@ -144,11 +128,12 @@ app.get("/rooms", function (req, res) {
 
 async function printClientInRooms() {
   let clientInRoomsStr = "";
-  for (const roomName of activeGameRooms) {
-    const sockets = await io.in(roomName).fetchSockets();
+  for (const [roomId, activeGame] of activeGameRooms) {
+    const sockets = await io.in(roomId).fetchSockets();
     for (const socket of sockets) {
-      clientInRoomsStr += "\n Socket in room: " + roomName + ". socket id: " + socket.id;
-      console.log("Socket in room: " + roomName + ". socket id: " + socket.id);
+      clientInRoomsStr += "\n Socket in room: " + roomId + ". socket id: " 
+                            + socket.id;
+      console.log("Socket in room: " + roomId + ". socket id: " + socket.id);
     }
   }
   return clientInRoomsStr;
