@@ -2,17 +2,33 @@ import express from "express";
 import { createServer } from "http";
 import { Server } from "socket.io";
 
-import { GAME_OVER, INITIALIZE, PLAYER_ONE_STORAGE_KEY, PLAYER_TWO_STORAGE_KEY, RESET } from "../utils/constants.mjs";
-import { GameModel } from "../backend/gameModel.mjs";
+import { GAME_OVER, INITIALIZE, PLAYER_ONE_STORAGE_KEY, PLAYER_TWO_STORAGE_KEY, 
+  RESET } from "./constants.mjs";
+import { GameController } from "./gameController.mjs";
 import { EventEmitter } from "node:events";
+
+import cors from "cors"; 
 
 const app = express();
 const server = createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:8080"
+    origin: "http://localhost:8080/*"
   }
 });
+
+app.use(cors()); 
+
+class GameOverHandler {
+  gameOverEmitter
+
+  constructor(activeGames) {
+    this.gameOverEmitter = new EventEmitter();
+    this.gameOverEmitter.on(GAME_OVER, activeGameId => {
+      activeGames.delete(activeGameId);
+    });
+  }
+}
 
 // some thoughts, we should store our own model of the current game board
 // and should store which player's turn it is. 
@@ -54,7 +70,7 @@ const socketEventMappedHandler = {
   },
 }
 
-const gameOverEmitter = new EventEmitter();
+const gameOverEmitter = new GameOverHandler(activeGameRooms);
 
 io.on('connection', socket => {
   console.log('user connected. socket id: ' + socket.id);
@@ -82,16 +98,12 @@ function createGame() {
   const roomIdLength = 60;
   const randomRoomId = randomId(roomIdLength); 
 
-  const activeGame = new GameModel(PLAYER_ONE_SYMBOL, PLAYER_TWO_SYMBOL,
+  const activeGame = new GameController(PLAYER_ONE_SYMBOL, PLAYER_TWO_SYMBOL,
     playerOneSocket, playerTwoSocket, randomRoomId, gameOverEmitter);
 
   activeGameRooms.set(randomRoomId, activeGame); 
 
   initializePlayerSockets(playerOneSocket, playerTwoSocket, randomRoomId);
-
-  gameOverEmitter.on(GAME_OVER, activeGameId => {
-    activeGameRooms.delete(activeGameId);
-  });
 
   console.log("num active game rooms: " + activeGameRooms.size);
 }
@@ -128,7 +140,21 @@ app.get("/rooms", function (req, res) {
     }
     res.send(clientInRooms);
   });
-})
+});
+
+// app.get("/login", function(req, res) {
+//   console.log("getting login stuff");
+//   res.send("hi");
+// })
+
+app.use(express.text()); 
+app.use(express.json()); 
+
+app.post("/login", function (req, res) {
+  console.log("req url " + req.url);
+  console.log("req stuff: " + req.body);
+  res.send("hii");
+});
 
 async function printClientInRooms() {
   let clientInRoomsStr = "";

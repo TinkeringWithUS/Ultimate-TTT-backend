@@ -2,10 +2,10 @@ import {
   DRAW, NEW_MOVE, PLAYER_ONE_STORAGE_KEY, PLAYER_TWO_STORAGE_KEY, LOSER, WINNER, GAME_OVER
   // RESET, WAIT_FOR_OTHER_PLAYER, RESETTED 
 }
-  from "../utils/constants.mjs";
+  from "./constants.mjs";
 import { MetaBoard } from "./metaBoard.mjs";
 
-export class GameModel {
+export class GameController {
 
   constructor(playerOne, playerTwo, playerOneSocket, playerTwoSocket, 
               gameId, gameOverEmitter) {
@@ -31,14 +31,14 @@ export class GameModel {
     // received p1 move 
     this.playerOneSocket.on(PLAYER_ONE_STORAGE_KEY, (moveInfo) => {
       const { tileId, boardId } = moveInfo;
-      this.sendMove(tileId, boardId);
+      this.sendMove(this.playerOneSocket, tileId, boardId);
       console.log("Received move. tileid: " + tileId + " player two");
     });
 
     // received p2 move
     this.playerTwoSocket.on(PLAYER_TWO_STORAGE_KEY, (moveInfo) => {
       const { tileId, boardId } = moveInfo;
-      this.sendMove(tileId, boardId);
+      this.sendMove(this.playerTwoSocket, tileId, boardId);
       console.log("Received move. tileid: " + tileId + " player one");
     });
   }
@@ -57,24 +57,26 @@ export class GameModel {
     return true;
   }
 
-  sendMove(tileId, boardId) {
+  // send move to all clients in game room 
+  sendMove(sender, tileId, boardId) {
     const hasPlaced = this.placeTile(tileId, boardId);
 
     console.log("sendMove in game model");
 
     if (hasPlaced) {
-      const moveSenderPlayerSocket = this.playerOneTurn ? this.playerOneSocket : this.playerTwoSocket;
-      const receivingPlayerKey = this.playerOneTurn ? PLAYER_TWO_STORAGE_KEY : PLAYER_ONE_STORAGE_KEY;
+      const receiver = this.playerOneTurn ? PLAYER_TWO_STORAGE_KEY : 
+                                PLAYER_ONE_STORAGE_KEY;
       const newMoveInfo = {
-        moveId: tileId, boardId: boardId, gameStatus: this.endStatus, player: receivingPlayerKey
+        moveId: tileId, boardId: boardId, gameStatus: this.endStatus, 
+        player: receiver
       };
 
-      moveSenderPlayerSocket.to(this.gameId).emit(NEW_MOVE, newMoveInfo);
-
-      console.log("game Id " + this.gameId);
-      console.log("server sending move. receiving player: " + receivingPlayerKey + ". tileid: " + tileId);
-
+      sender.to(this.gameId).emit(NEW_MOVE, newMoveInfo);
+      
       this.playerOneTurn = !this.playerOneTurn;
+      
+      console.log("game Id " + this.gameId);
+      console.log("server sending move. receiving player: " + receiver + ". tileid: " + tileId);
     }
 
     this.printModel();
@@ -97,6 +99,11 @@ export class GameModel {
       console.log("draw");
     }
     this.gameOverEmitter.emit(GAME_OVER, this.gameId);
+  }
+
+  rejoin(rejoinedSocket, player) {
+    // need to replay all the moves for this player, and 
+    // send the appropriate information to them 
   }
 
   // registerPlayAgainListeners() {
