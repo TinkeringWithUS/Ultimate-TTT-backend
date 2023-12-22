@@ -130,6 +130,10 @@ server.listen(port, function () {
   console.log(`Listening on port ${port}`);
 });
 
+app.get("/", function(req, res) {
+  res.sendFile(__dirname + "/index.html");
+});
+
 app.get("/rooms", function (req, res) {
   printClientInRooms().then(clientInRooms => {
     if (clientInRooms === "") {
