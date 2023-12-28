@@ -186,3 +186,5 @@ function randomId(length) {
   }
   return randomId;
 }
+
+export {app}; 
