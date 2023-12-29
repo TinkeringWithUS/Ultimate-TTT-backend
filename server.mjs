@@ -7,17 +7,18 @@ import { GAME_OVER, INITIALIZE, PLAYER_ONE_STORAGE_KEY, PLAYER_TWO_STORAGE_KEY,
 import { GameController } from "./gameController.mjs";
 import { EventEmitter } from "node:events";
 
-import cors from "cors"; 
+// import cors from "cors"; 
 
 const app = express();
 const server = createServer(app);
-const io = new Server(server, {
-  cors: {
-    origin: "http://localhost:8080/*"
-  }
-});
+const io = new Server(server);
+//   , {
+//   cors: {
+//     origin: "http://localhost:8080/*"
+//   }
+// });
 
-app.use(cors()); 
+// app.use(cors()); 
 
 class GameOverHandler {
   gameOverEmitter
@@ -131,7 +132,7 @@ server.listen(port, function () {
 });
 
 app.get("/", function(req, res) {
-  res.sendFile(__dirname + "/index.html");
+  res.sendFile(__dirname + "/dist/index.html"); 
 });
 
 app.get("/rooms", function (req, res) {
