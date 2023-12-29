@@ -11,7 +11,7 @@ import path from "path";
 import { fileURLToPath } from 'url';
 
 
-// import cors from "cors"; 
+import cors from "cors"; 
 
 const app = express();
 const server = createServer(app);
@@ -20,7 +20,7 @@ const io = new Server(server, {
     origin: "https://ultimate-ttt-frontend.vercel.app"
   }
 });
-// app.use(cors()); 
+app.use(cors()); 
 
 class GameOverHandler {
   gameOverEmitter
