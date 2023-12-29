@@ -6,6 +6,10 @@ import { GAME_OVER, INITIALIZE, PLAYER_ONE_STORAGE_KEY, PLAYER_TWO_STORAGE_KEY,
   RESET } from "./constants.mjs";
 import { GameController } from "./gameController.mjs";
 import { EventEmitter } from "node:events";
+import path from "path";
+
+import { fileURLToPath } from 'url';
+
 
 // import cors from "cors"; 
 
@@ -48,7 +52,7 @@ class GameOverHandler {
  * and when they reconnect, they send back that id 
  */
 
-const port = 3000;
+const port = process.env.PORT;
 
 // const activeGameRooms = [];
 const activeGameRooms = new Map(); 
@@ -132,7 +136,10 @@ server.listen(port, function () {
 });
 
 app.get("/", function(req, res) {
-  res.sendFile(__dirname + "/dist/index.html"); 
+  console.log("ahhh");
+  // res.sendFile("/dist/index.html" , { root : __dirname});
+  res.sendFile(path.dirname(fileURLToPath(import.meta.url)) + "/dist/index.html");
+  // res.sendFile(path.join(__dirname, "/dist/index.html")); 
 });
 
 app.get("/rooms", function (req, res) {
@@ -187,5 +194,3 @@ function randomId(length) {
   }
   return randomId;
 }
-
-export {app}; 
