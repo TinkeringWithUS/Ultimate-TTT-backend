@@ -4,7 +4,8 @@
   "description": "",
   "main": "server.mjs",
   "scripts": {
-    "start": "node server.mjs"
+    "start": "node server.mjs",
+    "build": "cd ../vue-frontend/tic-tac-toe-ui/ && npm install && npm run build"
   },
   "engines": {
     "node": "16.x"

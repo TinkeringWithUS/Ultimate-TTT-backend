@@ -52,7 +52,7 @@ class GameOverHandler {
  * and when they reconnect, they send back that id 
  */
 
-const port = process.env.PORT;
+const port = process.env.PORT || 3000;
 
 // const activeGameRooms = [];
 const activeGameRooms = new Map(); 
@@ -135,7 +135,11 @@ server.listen(port, function () {
   console.log(`Listening on port ${port}`);
 });
 
-app.get("/", function(req, res) {
+// app.use(express.static(path.dirname(fileURLToPath(import.meta.url)) + "/dist/index.html"));
+
+app.use(express.static("dist"));
+
+app.get("*", function(req, res) {
   console.log("ahhh");
   // res.sendFile("/dist/index.html" , { root : __dirname});
   res.sendFile(path.dirname(fileURLToPath(import.meta.url)) + "/dist/index.html");
