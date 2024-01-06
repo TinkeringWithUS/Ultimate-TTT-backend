@@ -11,18 +11,18 @@ import path from "path";
 import { fileURLToPath } from 'url';
 
 
-// import cors from "cors"; 
+import cors from "cors"; 
 
 const app = express();
 const server = createServer(app);
-const io = new Server(server);
-//   , {
-//   cors: {
-//     origin: "http://localhost:8080/*"
-//   }
-// });
+const io = new Server(server, {
+  // cors: {
+  //   origin: `${window.location.href}`
+  //   // origin: "http://localhost:8080/*"
+  // }
+});
 
-// app.use(cors()); 
+app.use(cors()); 
 
 class GameOverHandler {
   gameOverEmitter
