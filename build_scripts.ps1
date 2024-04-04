@@ -52,8 +52,9 @@ function Build {
     Write-Host "Get Location for dist: $dist_directory_path"
     $dist_path = "" + (Get-Location) + "\dist"
 
-    # k directory powershell script is running in 
+    # $PSScriptRoot is the directory powershell script is running in 
     Move-Item -Path $dist_path -Destination $PSScriptRoot  -force
+    
 
     Write-Host "Moved dist to backend."
 
@@ -80,6 +81,14 @@ if($command -eq "clean") {
 } 
 elseif($command -eq "build") {
     Build
+} 
+elseif($command -eq "move") {
+    $dist_path = "" + ("C:\Users\wwwzh\Documents\multiplayer-tictactoe\multi-ttt\Ultimate-TTT-frontend") + "\dist"
+    Write-Host "dist path"
+    Write-Host $dist_path
+    Write-Host "psscriptroot"
+    Write-Host $PSScriptRoot 
+    Move-Item -Path $dist_path -Destination $PSScriptRoot  -Force
 }
 
 # How to Use

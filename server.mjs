@@ -91,14 +91,14 @@ io.on('connection', socket => {
   needGameQueue.push(socket);
 
   if (needGameQueue.length >= 2) {
-    createGame();
+    createGame(needGameQueue, activeGameRooms);
   }
 });
 
 // Side effect: shrinks needGameQueue by 2
-function createGame() {
-  const playerOneSocket = needGameQueue.shift();
-  const playerTwoSocket = needGameQueue.shift();
+function createGame(socketsQueue, activeRooms) {
+  const playerOneSocket = socketsQueue.shift();
+  const playerTwoSocket = socketsQueue.shift();
 
   const roomIdLength = 60;
   const randomRoomId = randomId(roomIdLength); 
@@ -106,7 +106,7 @@ function createGame() {
   const activeGame = new GameController(PLAYER_ONE_SYMBOL, PLAYER_TWO_SYMBOL,
     playerOneSocket, playerTwoSocket, randomRoomId, gameOverEmitter);
 
-  activeGameRooms.set(randomRoomId, activeGame); 
+  activeRooms.set(randomRoomId, activeGame); 
 
   initializePlayerSockets(playerOneSocket, playerTwoSocket, randomRoomId);
 
